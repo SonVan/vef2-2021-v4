@@ -1,11 +1,9 @@
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-
 import express from 'express';
 import dotenv from 'dotenv';
 
 import { router as proxyRouter } from './proxy.js';
-//import { router as indexRouter } from '../client/index.js';
 
 
 dotenv.config();
@@ -20,16 +18,14 @@ const path = dirname(fileURLToPath(import.meta.url));
 app.use(express.static(join(path, '../public')));
 console.log(join(path, '../public'));
 
-app.set('views', join(path, '../views'));
 app.set('view engine', 'ejs');
 
 // TODO setja upp proxy þjónustu  
 // TODO birta index.html skjal
 app.use(proxyRouter);
-//app.use(indexRouter);
 
 app.get('/', (req, res) => {
-  res.sendFile(join(path, '../views/index.html'))
+  res.sendFile(join(path, '../index.html'))
 })
 
 /**

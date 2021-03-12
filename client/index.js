@@ -1,10 +1,43 @@
 
-
 import { fetchEarthquakes } from './lib/earthquakes.js';
-
-
 import { el, element, formatDate } from './lib/utils.js';
 import { init, createPopup } from './lib/map.js';
+
+
+const urlParams = new URLSearchParams(window.location.search);
+
+if (!urlParams.get('type') || !urlParams.get('period')) {
+  const hidden = document.querySelector('.hidden');
+  hidden.style.display = "none";
+}
+
+function translate(type, period) {
+  var typeIS;
+  var periodIS;
+
+  if (type === "significant") {
+    typeIS = "Verulegir jarðskjálftar";
+  } else if (type === "all") {
+    typeIS = "Allir jarðskjálftar";
+  } else {
+    typeIS = type + " á richter jarðskjálftar";
+  }
+
+  if (period === "hour") {
+    periodIS = ", seinastu klukkustund";
+  }
+  if (period === "day") {
+    periodIS = ", seinasta dag";
+  }
+  if (period === "week") {
+    periodIS = ", seinustu viku";
+  }
+  if (period === "month") {
+    periodIS = ", seinasta mánuð";
+  }
+
+  return typeIS + periodIS;
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   // TODO
@@ -13,24 +46,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Hreinsa header og upplýsingar þegar ný gögn eru sótt
   // Sterkur leikur að refactora úr virkni fyrir event handler í sér fall
 
-  const urlParams = new URLSearchParams(window.location.search);
   const period = urlParams.get('period');
   const type = urlParams.get('type');
 
   const data = await fetchEarthquakes(type, period);
+  if (!data) {
+    return;
+  }
   const earthquakes = data.data;
 
-  const header = document.querySelector('.header');
+  const headerText = translate(type, period);
+  document.querySelector('.header').appendChild(document.createTextNode(headerText));
 
-  //var h = document.createElement("H1");
-  var t = document.createTextNode("Hello World");
-  //h.appendChild(t);
-  header.appendChild(t);
+  var cacheText;
+
+  if (data.info.cached) {
+    cacheText = "Gögn eru í cache.";
+  } else {
+    cacheText = "Gögn eru ekki í cache."
+  }
+
+  cacheText = cacheText + " Fyrirspurn tók " + data.info.elapsed + " sek.";
+  document.querySelector('.cache').appendChild(document.createTextNode(cacheText));
+
 
   // Fjarlægjum loading skilaboð eftir að við höfum sótt gögn
   const loading = document.querySelector('.loading');
-  const parent = loading.parentNode;  
-  parent.removeChild(loading);
+  loading.style.display = "none";
 
   if (!earthquakes) {
     parent.appendChild(

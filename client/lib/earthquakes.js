@@ -1,4 +1,3 @@
-
 export async function fetchEarthquakes(type, period) {
   // TODO sækja gögn frá proxy þjónustu
   if  (!type || !period) {

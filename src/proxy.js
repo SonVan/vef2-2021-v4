@@ -2,27 +2,11 @@
 
 import express from 'express';
 import fetch from 'node-fetch';
-import dotenv from 'dotenv';
-import redis from 'redis';
-import util from 'util';
+import { get, set } from './cache.js';
 
 export const router = express.Router();
 
-dotenv.config();
 
-const {
-  REDIS_URL: redisUrl,
-} = process.env;
-
-if (!redisUrl) {
-  console.error('Vantar gögn í env');
-  process.exit(1);
-}
-
-const client = redis.createClient(redisUrl);
-
-const asyncGet = util.promisify(client.get).bind(client);
-const asyncSet = util.promisify(client.set).bind(client);
 
 function timerStart() {
   return process.hrtime();
@@ -38,48 +22,45 @@ function timerEnd(time) {
 
 
 
-router.get('/proxy', (req, res) => {
-  proxy(req, res);
-});
 
-async function fetchUSGS(url) {
-  var response;
 
-  await fetch(url)
-    .then(res => res.json())
-    .then((result) => {
-      response = res.json(result);
-    }).catch(err => {
-      console.error(err);
-      return null;
-    });
 
-  return response;
-}
 
-async function proxy(req, res) {
+router.get('/proxy', async (req, res) => {
   const period = req.query.period;
   const type = req.query.type;
+  const key = type + "_" + period;
   const url = `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/${type}_${period}.geojson`;
 
-  await fetch(url)
-    .then(res => res.json())
-    .then((json) => {
-      const data = res.json(json);
-      console.log(json);
-    }).catch(err => {
-      console.error(err);
-      return null;
-    });
+  var data;
+  var info = {
+    cached: '',
+    elapsed: ''
+  };
 
 
-  //data = await fetchUSGS(url);
-  
-/*
-  if (data) {
-    const set = await asyncSet('foo', data, 'EX', 2);
-    console.log('set = ', set);
-    const get = await asyncGet('foo');
-    console.log('get = ', get);
-  }*/
-}
+  const timer1 = timerStart();
+  data = await get(key);
+  info.elapsed = timerEnd(timer1);
+  info.cached = true;
+
+  if (data === null) {
+    const timer2 = timerStart();
+
+    await fetch(url)
+      .then(res => res.json())
+      .then((json) => {
+        data = json;
+      }).catch(err => {
+        console.error(err);
+        return null;
+      });
+    info.elapsed = timerEnd(timer2);
+    info.cached = false;
+    await set(key, data, 20);
+  }
+
+  const returnData = { data, info };
+
+  return res.json(returnData);
+});

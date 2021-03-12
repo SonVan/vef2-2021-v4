@@ -17,11 +17,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   const period = urlParams.get('period');
   const type = urlParams.get('type');
 
-  const earthquakes = await fetchEarthquakes(type, period);
+  const data = await fetchEarthquakes(type, period);
+  const earthquakes = data.data;
+
+  const header = document.querySelector('.header');
+
+  //var h = document.createElement("H1");
+  var t = document.createTextNode("Hello World");
+  //h.appendChild(t);
+  header.appendChild(t);
 
   // Fjarlægjum loading skilaboð eftir að við höfum sótt gögn
   const loading = document.querySelector('.loading');
-  const parent = loading.parentNode;
+  const parent = loading.parentNode;  
   parent.removeChild(loading);
 
   if (!earthquakes) {

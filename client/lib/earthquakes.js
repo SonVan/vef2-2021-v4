@@ -7,7 +7,7 @@ export async function fetchEarthquakes(type, period) {
 
   const url = `/proxy?period=${period}&type=${type}`;
   var result;
-  
+
   try {
     result = await fetch(url); 
   } catch (e) {

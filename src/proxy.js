@@ -24,47 +24,62 @@ const client = redis.createClient(redisUrl);
 const asyncGet = util.promisify(client.get).bind(client);
 const asyncSet = util.promisify(client.set).bind(client);
 
+function timerStart() {
+  return process.hrtime();
+}
 
-/**
- * Higher-order fall sem umlykur async middleware með villumeðhöndlun.
- *
- * @param {function} fn Middleware sem grípa á villur fyrir
- * @returns {function} Middleware með villumeðhöndlun
- */
-function catchErrors(fn) {
-  return (req, res, next) => fn(req, res, next).catch(next);
+function timerEnd(time) {
+  const diff = process.hrtime(time);
+  const elapsed = diff[0] * 1e9 + diff[1];
+  const elapsedAsSeconds = elapsed / 1e9;
+
+  return Number(elapsedAsSeconds.toFixed(4));
+}
+
+
+
+router.get('/proxy', (req, res) => {
+  proxy(req, res);
+});
+
+async function fetchUSGS(url) {
+  var response;
+
+  await fetch(url)
+    .then(res => res.json())
+    .then((result) => {
+      response = res.json(result);
+    }).catch(err => {
+      console.error(err);
+      return null;
+    });
+
+  return response;
 }
 
 async function proxy(req, res) {
-  /*
   const period = req.query.period;
   const type = req.query.type;
-
   const url = `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/${type}_${period}.geojson`;
 
-  fetch(url)
+  await fetch(url)
     .then(res => res.json())
-    .then((out) => {
-        console.log(out);
-  }).catch(err => console.error(err));
+    .then((json) => {
+      const data = res.json(json);
+      console.log(json);
+    }).catch(err => {
+      console.error(err);
+      return null;
+    });
 
-  return res.render('index');*/
 
-  const set = await asyncSet('foo', 'bar', 'EX', 2);
-  console.log('set = ', set);
-  const get = await asyncGet('foo');
-  console.log('get = ', get);
-
-  setTimeout(async () => {
-    const getResult = await asyncGet('foo');
-    console.log('get = ', getResult);
-    client.quit();
-  }, 2100);
-
-  return "hello!";
+  //data = await fetchUSGS(url);
+  
+/*
+  if (data) {
+    const set = await asyncSet('foo', data, 'EX', 2);
+    console.log('set = ', set);
+    const get = await asyncGet('foo');
+    console.log('get = ', get);
+  }*/
 }
-
-
-router.get('/proxy', catchErrors(proxy));
-
-

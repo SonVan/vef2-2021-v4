@@ -1,6 +1,10 @@
-import { fetchEarthquakes } from './lib/earthquakes';
-import { el, element, formatDate } from './lib/utils';
-import { init, createPopup } from './lib/map';
+
+
+import { fetchEarthquakes } from './lib/earthquakes.js';
+
+
+import { el, element, formatDate } from './lib/utils.js';
+import { init, createPopup } from './lib/map.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // TODO
@@ -9,8 +13,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Hreinsa header og upplýsingar þegar ný gögn eru sótt
   // Sterkur leikur að refactora úr virkni fyrir event handler í sér fall
 
-  const earthquakes = await fetchEarthquakes(4.5, day);
-  console.log(earthquakes);
+  const urlParams = new URLSearchParams(window.location.search);
+  const period = urlParams.get('period');
+  const type = urlParams.get('type');
+
+  const earthquakes = await fetchEarthquakes(type, period);
 
   // Fjarlægjum loading skilaboð eftir að við höfum sótt gögn
   const loading = document.querySelector('.loading');
@@ -28,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   init(map);
 
-  earthquakes.forEach((quake) => {
+  earthquakes.features.forEach((quake) => {
     const {
       title, mag, time, url,
     } = quake.properties;
